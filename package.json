@@ -1,0 +1,30 @@
+{
+  "name": "epm-pad-engine",
+  "version": "0.0.3",
+  "description": "Plugins for EPM to works with PAD packages",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/delmosaurio/epm-pad-engine.git"
+  },
+  "keywords": [
+    "EPM",
+    "engine",
+    "package"
+  ],
+  "author": "Dte-ba",
+  "license": "GPL v3",
+  "bugs": {
+    "url": "https://github.com/delmosaurio/epm-pad-engine/issues"
+  },
+  "homepage": "https://github.com/delmosaurio/epm-pad-engine",
+  "dependencies": {
+    "adm-zip": "^0.4.4",
+    "mime": "^1.2.11",
+    "mkdirp": "^0.3.5",
+    "underscore": "^1.6.0"
+  }
+}
