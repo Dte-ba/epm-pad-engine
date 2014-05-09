@@ -1,6 +1,6 @@
 {
   "name": "epm-pad-engine",
-  "version": "0.0.3",
+  "version": "0.0.5",
   "description": "Plugins for EPM to works with PAD packages",
   "main": "index.js",
   "scripts": {

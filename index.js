@@ -34,7 +34,7 @@ PadEngine.files = [ ".zip", ".rar", ".tar", ".tar.gz" ];
 
 PadEngine.type = 'epm-package-engine';
 
-PadEngine.version require('./package.json').version;
+PadEngine.version = require('./package.json').version;
 
 PadEngine.prototype.readMetadata = function(filename, cb) {
   var self = this
