@@ -219,7 +219,7 @@ PadEngine.prototype.content = function(repo, info, meta, cb){
   var key = info.uid + '-' + info.build;
   var cf = repo.fs.resolve('cache-folder', key);
 
-  var cfiles = metadata.content.files;
+  var cfiles = meta.content.files;
 
   if (cfiles.length === 0){
     return cb && cb(new Error('Unknown content'));
