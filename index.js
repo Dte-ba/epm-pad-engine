@@ -241,19 +241,10 @@ PadEngine.prototype.content = function(repo, info, meta, cb){
       zip.extractAllTo(cf, true);  
     }
 
-    var res = {};
-
-    if (cfiles.length === 1){
-      var first = cfiles[0];
-      res.type = 'file';
-      res.filename = path.join(cf, first.filename);
-    } else {
-      res.type = 'files';
-      res.filenames = cfiles.map(function(f){
-        return path.join(cf, f.filename);
-      });
-    }
+    var files = cfiles.map(function(f){
+      return path.join(cf, f.filename);
+    });
     
-    cb && cb(null, res);
+    cb && cb(null, files);
   });
 }
