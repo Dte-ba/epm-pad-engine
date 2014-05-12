@@ -185,7 +185,7 @@ PadEngine.prototype.asset = function(repo, info, meta, asset, cb){
   }
 
   mkdirp(cf, function(err){
-    if (err) return cb && cb(err)
+    if (err) return cb && cb(err);
 
     var zip = new AdmZip(repo.resolve(info.filename))
     zip.extractAllTo(cf, true);
@@ -211,4 +211,49 @@ PadEngine.prototype.resolveAsset = function(metadata, asset){
   }
 
   return undefined
+}
+
+PadEngine.prototype.content = function(repo, info, meta, cb){
+  var self = this
+
+  var key = info.uid + '-' + info.build;
+  var cf = repo.fs.resolve('cache-folder', key);
+
+  var cfiles = metadata.content.files;
+
+  if (cfiles.length === 0){
+    return cb && cb(new Error('Unknown content'));
+  }
+
+  var extracteds = false;
+
+  if (fs.existsSync(cf)) {
+    extracteds = !_.any(cfiles, function(f){
+      return !fs.existsSync(path.join(cf, f.filename));
+    });
+  }
+
+  mkdirp(cf, function(err){
+    if (err) return cb && cb(err);
+
+    if (!extracteds){
+      var zip = new AdmZip(repo.resolve(info.filename))
+      zip.extractAllTo(cf, true);  
+    }
+
+    var res = {};
+
+    if (cfiles.length === 1){
+      var first = cfiles[0];
+      res.type = 'file';
+      res.filename = path.join(cf, first.filename);
+    } else {
+      res.type = 'files';
+      res.filenames = cfiles.map(function(f){
+        return path.join(cf, f.filename);
+      });
+    }
+    
+    cb && cb(null, res);
+  });
 }
