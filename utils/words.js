@@ -7,8 +7,6 @@
 /**
  * Module dependencies.
  */
-var XRegExp = require('xregexp').XRegExp
-  ;
 
 // regular expression lib
 var regexLib = {
