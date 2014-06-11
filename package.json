@@ -1,6 +1,6 @@
 {
   "name": "epm-pad-engine",
-  "version": "0.0.15",
+  "version": "0.0.19",
   "description": "Plugins for EPM to works with PAD packages",
   "main": "index.js",
   "scripts": {
@@ -22,9 +22,9 @@
   },
   "homepage": "https://github.com/delmosaurio/epm-pad-engine",
   "dependencies": {
-    "adm-zip": "^0.4.4",
     "mime": "^1.2.11",
     "mkdirp": "^0.3.5",
-    "underscore": "^1.6.0"
+    "underscore": "^1.6.0",
+    "adm-zip": "git+https://github.com/delmosaurio/adm-zip.git"
   }
 }
