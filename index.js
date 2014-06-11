@@ -38,12 +38,12 @@ PadEngine.version = require('./package.json').version;
 
 PadEngine.prototype.readMetadata = function(filename, cb) {
   var self = this
-  var metadata = undefined
+  try {
+    var metadata = undefined
 
-  var zip = new AdmZip(path.resolve(filename))
-  zip.readAsTextAsync('package.json', function(metadata){
-    
-    //if (err) return cb && cb(err);
+    var zip = new AdmZip(path.resolve(filename));
+    var metadata = zip.readAsText('package.json');
+
 
     if (metadata === undefined || metadata === "") {
       return cb && cb(new Error("metadata undefined"));
@@ -51,8 +51,10 @@ PadEngine.prototype.readMetadata = function(filename, cb) {
 
     cb && cb(null, JSON.parse(metadata));
 
-  });
-  
+  } catch (err){
+    console.error(err);
+    return cb && cb(err);
+  }
 }
 
 
