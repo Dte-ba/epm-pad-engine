@@ -39,18 +39,16 @@ PadEngine.version = require('./package.json').version;
 PadEngine.prototype.readMetadata = function(filename, cb) {
   var self = this
   try {
-    var metadata = undefined
-
     var zip = new AdmZip(path.resolve(filename));
-    var metadata = zip.readAsText('package.json');
 
+    zip.readAsTextAsync('package.json', function(metadata){
+      if (metadata === undefined || metadata === "") {
+        return cb && cb(new Error("metadata undefined"));
+      }
 
-    if (metadata === undefined || metadata === "") {
-      return cb && cb(new Error("metadata undefined"));
-    }
-
-    cb && cb(null, JSON.parse(metadata));
-
+      cb && cb(null, JSON.parse(metadata));
+    });
+    
   } catch (err){
     console.error(err);
     return cb && cb(err);
