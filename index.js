@@ -171,7 +171,6 @@ PadEngine.prototype.asset = function(repo, info, meta, asset, cb){
   var cf = repo.fs.resolve('cache-folder', key)
 
   var aFilename = self.resolveAsset(meta, asset)
-
   if (aFilename === undefined){
     cb && cb(new Error('Unknown asset ' + asset))
     return self
@@ -188,7 +187,8 @@ PadEngine.prototype.asset = function(repo, info, meta, asset, cb){
     if (err) return cb && cb(err);
 
     var zip = new AdmZip(repo.resolve(info.filename))
-    zip.extractAllTo(cf, true);
+    //zip.extractAllTo(cf, true);
+    zip.extractEntryTo(aFilename, cf, true, true);
 
     cb && cb(null, full)
   })
