@@ -1,3 +1,5 @@
+'use strict';
+
 /*!
  * PAD package engine.
  *
@@ -7,37 +9,15 @@
 var fs = require('fs')
   , path = require('path')
   , AdmZip = require('adm-zip')
-  , wordsUtils = require("./utils/words")
   , mkdirp = require("mkdirp")
   , mime = require("mime")
   , _ = require("underscore")
+  , async = require("async")
+  , Q = require("q");
 
-/**
- * Simple Package Engine
- * 
- * Initialize a new PadEngine.
- *
- * @param {Object} repo
- */
-var PadEngine = module.exports = function() {
-  var self = this
+function _readMetadata(task, cb){
+  var filename = task.filename;
 
-  if(false === (self instanceof PadEngine)) {
-    return new PadEngine()
-  }
-
-  return self
-}
-
-// IMPORTANT !
-PadEngine.files = [ ".zip", ".rar", ".tar", ".tar.gz" ];
-
-PadEngine.type = 'epm-package-engine';
-
-PadEngine.version = require('./package.json').version;
-
-PadEngine.prototype.readMetadata = function(filename, cb) {
-  var self = this
   try {
     var zip = new AdmZip(path.resolve(filename));
 
@@ -55,132 +35,43 @@ PadEngine.prototype.readMetadata = function(filename, cb) {
   }
 }
 
+function _resolveAsset(metadata, asset){
+  // image?
+  if (asset.match(/(front|content)/ig)){
+    var a = metadata.content.images.filter(function(i){
+      return i.type === asset.toLowerCase();
+    })
 
-PadEngine.prototype.cutUid = function(uid){
-  return uid.substring(0, 7) + ".." + uid.substring(uid.length-7)
-}
-
-PadEngine.prototype.getTags = function(metadata){
-  if (   metadata === undefined 
-      || metadata.content === undefined 
-      || metadata.content.tags === undefined) return []
-    
-  return wordsUtils.splitTags(metadata.content.tags)
-}
-
-PadEngine.prototype.isMatch = function(metadata, query){
-  var self = this;
-
-  var meta = metadata
-    , res
-
-  var where = _.clone(query.where);
-
-  var prev;
-
-  while (where !== undefined){
-    //console.info(where);
-    var pred = _.clone(where.predicate);
-
-    var curr = self.isMatchPredicate(pred, metadata)
-
-    if (res === undefined){
-      res = curr
-    } else if (prev === 'and'){
-      res = res && curr;
-      
-      //if (curr === false) return false;
-
-    } else {
-      res = res || curr;
+    if (a.length === 0) {
+      return undefined
     }
 
-    if (where.and !== undefined) {
-      prev = 'and'
-    } else {
-      prev = 'or'
-    }
-
-    if (where.and !== undefined) {
-      where = _.clone(where.and);
-    } else if (where.or !== undefined) {
-      where = _.clone(where.or);
-    } else {
-      where = undefined;
-    }
+    return a[0].src;
   }
 
-  return res
+  return undefined;
 }
 
-PadEngine.prototype.isMatchPredicate = function(predicate, metadata) {
-  var self = this;
-
-  try {
-    var key = predicate.key.toLowerCase();
-
-    if (key.match(/(uid|id)/gi)){
-      return compareScape(
-          predicate,
-          metadata.uid
-        );
-    } else if (key.match(/(area|axis|block|title)/gi)){
-
-      return compareScape(
-          predicate,
-          metadata.content[key]
-        );
-      
-    } else if (key === 'tag'){
-      var tags = wordsUtils.splitTags(metadata.content.tags);
-      
-      if (tags.length === 0) return false;
-
-      return _.any(tags.map(function(t){
-        return compareScape(predicate, t);
-      }));
-    }
-
-  } catch(err){
-    console.error(err);
-    return false;
-  }
-}
-
-function compareScape(predicate, text){
-  var ps = wordsUtils.escape(predicate.value);
-  var pv = wordsUtils.escape(text);
-
-  if (pv === undefined || pv === '') return false;
-  //console.log("'%s' '%s' '%s'", ps, predicate.operator, pv);
-  switch(predicate.operator){
-    
-    case '!=': return ps !== pv;
-
-    case 'contains': return pv.indexOf(ps) !== -1;
-
-    case '=':
-      default: return ps === pv;
-  }
-}
-
-PadEngine.prototype.asset = function(repo, info, meta, asset, cb){
-  var self = this
+function _asset(task, cb){
+  var repo = task.repo;
+  var info = task.info;
+  var meta = task.meta;
+  var asset = task.asset;
 
   var key = info.uid + '-' + info.build
   var cf = repo.fs.resolve('cache-folder', key)
 
-  var aFilename = self.resolveAsset(meta, asset)
+  var aFilename = _resolveAsset(meta, asset)
   if (aFilename === undefined){
     cb && cb(new Error('Unknown asset ' + asset))
-    return self
+    return;
   }
 
   var full = repo.fs.resolve('cache-folder', key, aFilename)
 
   if (fs.existsSync(full)) {
     cb && cb(null, full)
-    return self
+    return;
   }
 
   mkdirp(cf, function(err){
@@ -191,30 +82,15 @@ PadEngine.prototype.asset = function(repo, info, meta, asset, cb){
     zip.extractEntryTo(aFilename, cf, true, true);
 
     cb && cb(null, full)
-  })
+  });
 
-  return self
-}
+};
 
-PadEngine.prototype.resolveAsset = function(metadata, asset){
-  var self = this
-
-  // image?
-  if (asset.match(/(front|content)/ig)){
-    var a = metadata.content.images.filter(function(i){
-      return i.type === asset.toLowerCase()
-    })
-
-    if (a.length === 0) return undefined
-
-    return a[0].src
-  }
-
-  return undefined
-}
-
-PadEngine.prototype.content = function(repo, info, meta, cb){
-  var self = this
+function _content(task, cb){
+  
+  var repo = task.repo;
+  var info = task.info;
+  var meta = task.meta;
 
   var key = info.uid + '-' + info.build;
   var cf = repo.fs.resolve('cache-folder', key);
@@ -248,3 +124,97 @@ PadEngine.prototype.content = function(repo, info, meta, cb){
     cb && cb(null, files);
   });
 }
+
+/**
+ * Simple Package Engine
+ * 
+ * Initialize a new PadEngine.
+ *
+ * @param {Object} repo
+ */
+var PadEngine = module.exports = function() {
+  var self = this
+
+  if(false === (self instanceof PadEngine)) {
+    return new PadEngine();
+  }
+
+  self.queue = async.queue(function(task, callback){
+
+    var _func;
+    if (task.type === 'metadata'){
+      _func = _readMetadata;
+    }
+
+    if (task.type === 'asset'){
+      _func = _asset;
+    }
+
+    if (task.type === 'content'){
+      _func = _content;
+    }
+    
+    var cb = function(err, data){
+      if (err){
+        return task.defer.reject(err);
+      }
+
+      task.defer.resolve(data);
+      callback();
+    };
+
+    _func.apply(self, [task, cb])
+  });
+
+  return self
+}
+
+// IMPORTANT !
+PadEngine.files = [ ".zip", ".rar", ".tar", ".tar.gz" ];
+
+PadEngine.type = 'epm-package-engine';
+
+PadEngine.version = require('./package.json').version;
+
+PadEngine.prototype.readMetadata = function(filename) {
+  var self = this;
+
+  var task = { type: 'metadata', filename: filename, defer: Q.defer() };
+
+  self.queue.push(task);
+
+  return task.defer.promise;
+};
+
+PadEngine.prototype.asset = function(repo, info, meta, asset){
+  var self = this
+
+  var task = { 
+    type: 'asset', 
+    repo: repo,
+    info: info,
+    meta: meta,
+    asset: asset,
+    defer: Q.defer() 
+  };
+
+  self.queue.push(task);
+
+  return task.defer.promise;
+};
+
+PadEngine.prototype.content = function(repo, info, meta, cb){
+  var self = this
+
+  var task = { 
+    type: 'asset', 
+    repo: repo,
+    info: info,
+    meta: meta,
+    defer: Q.defer() 
+  };
+
+  self.queue.push(task);
+
+  return task.defer.promise;
+};
