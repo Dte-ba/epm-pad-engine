@@ -30,7 +30,7 @@ function _readMetadata(task, cb){
     });
     
   } catch (err){
-    console.error(err);
+    //console.error(err);
     return cb && cb(err);
   }
 }
@@ -156,6 +156,7 @@ var PadEngine = module.exports = function() {
     
     var cb = function(err, data){
       if (err){
+        callback();
         return task.defer.reject(err);
       }
 
@@ -163,7 +164,8 @@ var PadEngine = module.exports = function() {
       callback();
     };
 
-    _func.apply(self, [task, cb])
+    _func.apply(self, [task, cb]);
+
   });
 
   return self
