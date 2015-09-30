@@ -209,7 +209,7 @@ PadEngine.prototype.content = function(repo, info, meta, cb){
   var self = this
 
   var task = { 
-    type: 'asset', 
+    type: 'content', 
     repo: repo,
     info: info,
     meta: meta,
